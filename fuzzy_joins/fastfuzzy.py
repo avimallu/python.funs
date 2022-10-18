@@ -1,8 +1,3 @@
-import ftfy
-import numpy           as np
-import pandas          as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 class fastfuzzy:
     
     def __init__(self, n_gram, n_jobs, source_strings, compare_strings):
@@ -50,7 +45,7 @@ class fastfuzzy:
         index.createIndex(print_progress=True)
         self.index = index
     
-    def query(self, k):
+    def query(self, k, produce="dataframe"):
         query_matrix = self.index.knnQueryBatch(self.compare_tfidf_matrix, k=k, num_threads=self.n_jobs)
         compared_string, matched_strings, matched_conf = ([], [], [])
         
@@ -59,10 +54,16 @@ class fastfuzzy:
             compared_string.append(np.repeat(i, len(query_matrix[i][0])))
             matched_strings.append(query_matrix[i][0])
             matched_conf.append(query_matrix[i][1])
-            
-        return (pd.DataFrame({
-            "compared_string" : [self.compare[x] for x in np.hstack(compared_string)],
-            "matched_string"  : [self.source[x]  for x in np.hstack(matched_strings)],
-            "confidence"      : np.hstack(matched_conf)})
-                .loc[lambda x: x.matched_string != x.compared_string]
-               )
+        
+        if produce == "dataframe":
+            return (pd.DataFrame({
+                "compared_string" : [self.compare[x] for x in np.hstack(compared_string)],
+                "matched_string"  : [self.source[x]  for x in np.hstack(matched_strings)],
+                "confidence"      : np.hstack(matched_conf)})
+                    .loc[lambda x: x.matched_string != x.compared_string]
+                   )
+        else:
+            return (sparse.coo_matrix(
+                (np.hstack(matched_conf), (np.hstack(matched_strings), np.hstack(compared_string))))
+                    .tocsr()
+                   )
