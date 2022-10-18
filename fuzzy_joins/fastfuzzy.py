@@ -45,7 +45,7 @@ class fastfuzzy:
         index.createIndex(print_progress=True)
         self.index = index
     
-    def query(self, k, produce="dataframe"):
+    def query(self, k, return_df =True):
         query_matrix = self.index.knnQueryBatch(self.compare_tfidf_matrix, k=k, num_threads=self.n_jobs)
         compared_string, matched_strings, matched_conf = ([], [], [])
         
@@ -55,15 +55,15 @@ class fastfuzzy:
             matched_strings.append(query_matrix[i][0])
             matched_conf.append(query_matrix[i][1])
         
-        if produce == "dataframe":
+        compared_string = np.hstack(compared_string)
+        matched_strings = np.hstack(matched_strings)
+        confidence      = np.hstack(matched_conf)
+        
+        if return_df:
             return (pd.DataFrame({
-                "compared_string" : [self.compare[x] for x in np.hstack(compared_string)],
-                "matched_string"  : [self.source[x]  for x in np.hstack(matched_strings)],
-                "confidence"      : np.hstack(matched_conf)})
-                    .loc[lambda x: x.matched_string != x.compared_string]
-                   )
+                "compared_string" : [self.compare[x] for x in compared_string],
+                "matched_string"  : [self.source[x]  for x in matched_strings],
+                "confidence"      : confidence})
+                    .loc[lambda x: x.matched_string != x.compared_string])
         else:
-            return (sparse.coo_matrix(
-                (np.hstack(matched_conf), (np.hstack(matched_strings), np.hstack(compared_string))))
-                    .tocsr()
-                   )
+            return sparse.coo_matrix(compared_string, (matched_strings, confidence)).tocsr()
