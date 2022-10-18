@@ -58,7 +58,7 @@ class fastfuzzy:
         compared_string = np.hstack(compared_string)
         matched_strings = np.hstack(matched_strings)
         confidence      = np.hstack(matched_conf)
-        
+
         if return_df:
             return (pd.DataFrame({
                 "compared_string" : [self.compare[x] for x in compared_string],
@@ -66,4 +66,4 @@ class fastfuzzy:
                 "confidence"      : confidence})
                     .loc[lambda x: x.matched_string != x.compared_string])
         else:
-            return sparse.coo_matrix(compared_string, (matched_strings, confidence)).tocsr()
+            return sparse.coo_matrix((confidence, (compared_string, matched_strings))).tocsr()
