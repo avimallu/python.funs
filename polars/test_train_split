@@ -1,0 +1,15 @@
+def train_test_split(
+    df: pl.DataFrame, train_fraction: float = 0.75
+) -> Tuple[pl.DataFrame, pl.DataFrame]:
+    """Split polars dataframe into two sets.
+    Args:
+        df (pl.DataFrame): Dataframe to split
+        train_fraction (float, optional): Fraction that goes to train. Defaults to 0.75.
+    Returns:
+        Tuple[pl.DataFrame, pl.DataFrame]: Tuple of train and test dataframes
+    """
+    df = df.with_column(pl.all().shuffle(seed=1))
+    split_index = int(train_fraction * len(df))
+    df_train = df[:split_index]
+    df_test = df[split_index:]
+    return (df_train, df_test)
